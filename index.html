@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f4f5f7">
+<title>ATS 言葉の選別 — 投票</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root { --bg-base: #f4f5f7; --bg-soft: #eef0f3; --bg-card: #ffffff; --navy-deep: #0f2744; --navy: #1a3a5c; --navy-mid: #2d5278; --navy-soft: #5b7a9b; --text-primary: #1a2433; --text-secondary: #6b7a8c; --text-tertiary: #a0aab8; --gold-accent: #c89b3c; --green: #4ade80; --green-deep: #16a34a; --red: #ef4444; --red-deep: #dc2626; --gray: #94a3b8; --border-subtle: rgba(15, 39, 68, 0.08); --grid-line: rgba(15, 39, 68, 0.04); --shadow-card: rgba(15, 39, 68, 0.12); }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg-base); color: var(--text-primary); font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; min-height: 100dvh; overflow-x: hidden; }
+body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+.app { position: relative; z-index: 10; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 16px); max-width: 600px; margin: 0 auto; }
+.header { padding: 20px 4px 16px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; }
+.brand-logo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.15em; color: var(--navy-deep); line-height: 1; }
+.brand-sub { font-family: 'Shippori Mincho', serif; font-size: 11px; color: var(--text-secondary); letter-spacing: 0.25em; margin-top: 4px; }
+.user-selector { display: flex; gap: 4px; background: var(--bg-soft); padding: 4px; border-radius: 22px; }
+.user-btn { background: transparent; border: none; padding: 6px 14px; font-family: 'Shippori Mincho', serif; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-radius: 18px; font-weight: 500; }
+.user-btn.active { background: var(--navy-deep); color: #ffffff; }
+.progress-section { padding: 16px 4px; }
+.progress-info { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.progress-text { font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: var(--text-secondary); letter-spacing: 0.15em; }
+.progress-counts { display: flex; gap: 12px; font-size: 11px; color: var(--text-tertiary); }
+.count-good { color: var(--green-deep); }
+.count-bad { color: var(--red-deep); }
+.progress-bar { height: 4px; background: var(--bg-soft); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--navy); width: 0%; transition: width 0.3s; }
+.filter-bar { display: flex; gap: 6px; overflow-x: auto; padding: 8px 4px 12px; scrollbar-width: none; }
+.filter-bar::-webkit-scrollbar { display: none; }
+.filter-btn { flex-shrink: 0; background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 6px 12px; font-family: 'Shippori Mincho', serif; font-size: 12px; color: var(--text-secondary); cursor: pointer; border-radius: 16px; white-space: nowrap; }
+.filter-btn.active { background: var(--navy); border-color: var(--navy); color: #ffffff; }
+.main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 0; }
+.card { width: 100%; background: var(--bg-card); border-radius: 20px; padding: 32px 24px; box-shadow: 0 8px 24px var(--shadow-card); min-height: 320px; display: flex; flex-direction: column; justify-content: space-between; }
+.card-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.card-day-theme { display: flex; align-items: center; gap: 10px; }
+.day-badge { background: var(--navy-deep); color: #ffffff; font-family: 'Shippori Mincho', serif; font-size: 14px; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+.theme-tag { font-family: 'Shippori Mincho', serif; font-size: 13px; color: var(--gold-accent); letter-spacing: 0.2em; }
+.source-badge { font-family: 'Bebas Neue', sans-serif; font-size: 10px; color: var(--text-tertiary); letter-spacing: 0.15em; padding: 4px 10px; border: 1px solid var(--border-subtle); border-radius: 10px; }
+.source-badge.source-c { color: var(--navy-mid); border-color: var(--navy-mid); }
+.source-badge.source-o { color: var(--gold-accent); border-color: var(--gold-accent); }
+.words { font-family: 'Shippori Mincho', serif; font-size: 19px; line-height: 1.9; color: var(--navy-deep); text-align: center; white-space: pre-line; font-weight: 500; padding: 16px 0; flex: 1; display: flex; align-items: center; justify-content: center; }
+.description-toggle { background: transparent; border: 1px dashed var(--border-subtle); color: var(--text-tertiary); font-family: 'Shippori Mincho', serif; font-size: 12px; padding: 8px 16px; border-radius: 12px; cursor: pointer; margin-top: 8px; align-self: center; }
+.description { margin-top: 16px; padding: 14px 16px; background: var(--bg-soft); border-radius: 12px; font-family: 'Shippori Mincho', serif; font-size: 13px; line-height: 1.7; color: var(--text-secondary); display: none; }
+.description.visible { display: block; }
+.vote-buttons { display: flex; gap: 12px; padding: 20px 0 8px; }
+.vote-btn { flex: 1; border: none; padding: 16px 8px; font-family: 'Shippori Mincho', serif; font-size: 14px; font-weight: 600; border-radius: 14px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s; }
+.vote-btn-icon { font-size: 22px; font-family: 'Bebas Neue', sans-serif; }
+.vote-btn:active { transform: scale(0.96); }
+.vote-good { background: var(--green); color: #064e3b; }
+.vote-skip { background: var(--bg-soft); color: var(--text-secondary); }
+.vote-bad { background: #fecaca; color: var(--red-deep); }
+.nav-bar { display: flex; justify-content: space-between; gap: 8px; padding: 12px 0; }
+.nav-btn { background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 0.2em; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+.nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.complete-screen { display: none; text-align: center; padding: 40px 20px; flex-direction: column; align-items: center; gap: 24px; }
+.complete-screen.visible { display: flex; }
+.complete-title { font-family: 'Shippori Mincho', serif; font-size: 24px; color: var(--navy-deep); font-weight: 600; }
+.complete-stats { display: flex; gap: 24px; font-family: 'Shippori Mincho', serif; margin-top: 16px; }
+.stat-item { display: flex; flex-direction: column; gap: 4px; }
+.stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 36px; }
+.stat-num.good { color: var(--green-deep); }
+.stat-num.bad { color: var(--red-deep); }
+.stat-label { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.2em; }
+.export-btn { margin-top: 20px; background: var(--navy-deep); color: #ffffff; border: none; padding: 14px 32px; font-family: 'Shippori Mincho', serif; font-size: 14px; border-radius: 12px; cursor: pointer; letter-spacing: 0.1em; }
+.reset-btn { background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); padding: 8px 20px; font-family: 'Shippori Mincho', serif; font-size: 12px; border-radius: 10px; cursor: pointer; margin-top: 12px; }
+.footer { text-align: center; padding: 12px 0 4px; font-family: 'Shippori Mincho', serif; font-size: 10px; color: var(--text-tertiary); letter-spacing: 0.2em; border-top: 1px solid var(--border-subtle); }
+@media (max-width: 360px) { .words { font-size: 17px; } .vote-btn { font-size: 13px; padding: 14px 6px; } .vote-btn-icon { font-size: 18px; } .filter-btn { font-size: 11px; padding: 5px 10px; } }
+</style>
+</head>
+<body>
+<div class="app">
+<header class="header">
+<div><div class="brand-logo">A・T・S</div><div class="brand-sub">言葉の選別</div></div>
+<div class="user-selector">
+<button class="user-btn active" data-user="hide">ヒデ</button>
+<button class="user-btn" data-user="mori">森</button>
+<button class="user-btn" data-user="kashizako">樫迫</button>
+</div>
+</header>
+<div class="progress-section">
+<div class="progress-info">
+<span class="progress-text" id="progressText">0 / 0</span>
+<div class="progress-counts">
+<span class="count-good" id="countGood">採用 0</span>
+<span id="countSkip">保留 0</span>
+<span class="count-bad" id="countBad">却下 0</span>
+</div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+<div class="filter-bar">
+<button class="filter-btn active" data-filter="all">すべて</button>
+<button class="filter-btn" data-filter="月">月・凡事徹底</button>
+<button class="filter-btn" data-filter="火">火・警備俳句</button>
+<button class="filter-btn" data-filter="水">水・偉人の言葉</button>
+<button class="filter-btn" data-filter="木">木・先輩の声</button>
+<button class="filter-btn" data-filter="金">金・週末前</button>
+<button class="filter-btn" data-filter="土">土・ふざけ系</button>
+<button class="filter-btn" data-filter="日">日・川柳</button>
+<button class="filter-btn" data-filter="unvoted">未投票のみ</button>
+</div>
+<main class="main">
+<div class="card" id="card">
+<div class="card-meta">
+<div class="card-day-theme">
+<div class="day-badge" id="dayBadge">月</div>
+<div class="theme-tag" id="themeTag">テーマ</div>
+</div>
+<div class="source-badge" id="sourceBadge">SRC</div>
+</div>
+<div class="words" id="words">読み込み中...</div>
+<button class="description-toggle" id="descToggle" style="display:none;">解説を見る ▾</button>
+<div class="description" id="description"></div>
+</div>
+<div class="complete-screen" id="completeScreen">
+<div class="complete-title">投票完了！</div>
+<div class="complete-stats">
+<div class="stat-item"><div class="stat-num good" id="finalGood">0</div><div class="stat-label">採用</div></div>
+<div class="stat-item"><div class="stat-num" id="finalSkip">0</div><div class="stat-label">保留</div></div>
+<div class="stat-item"><div class="stat-num bad" id="finalBad">0</div><div class="stat-label">却下</div></div>
+</div>
+<button class="export-btn" id="exportBtn">結果をコピー</button>
+<button class="reset-btn" id="resetBtn">最初からやり直す</button>
+</div>
+</main>
+<div class="vote-buttons" id="voteButtons">
+<button class="vote-btn vote-bad" id="btnBad"><span class="vote-btn-icon">×</span>却下</button>
+<button class="vote-btn vote-skip" id="btnSkip"><span class="vote-btn-icon">—</span>保留</button>
+<button class="vote-btn vote-good" id="btnGood"><span class="vote-btn-icon">○</span>採用</button>
+</div>
+<div class="nav-bar">
+<button class="nav-btn" id="btnPrev">← 戻る</button>
+<button class="nav-btn" id="btnNext">スキップ →</button>
+</div>
+<footer class="footer">ATセキュリティ ・ 凡事徹底</footer>
+</div>
+<script>
+let allItems = [], filteredItems = [], currentIndex = 0, currentUser = 'hide', currentFilter = 'all';
+let votes = { hide: {}, mori: {}, kashizako: {} };
+const STORAGE_KEY = 'ats-vote-data-v1';
+function loadVotes() { try { const s = localStorage.getItem(STORAGE_KEY); if (s) votes = JSON.parse(s); } catch(e){} }
+function saveVotes() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(votes)); } catch(e){} }
+async function loadData() {
+  try {
+    const r = await fetch('items.json');
+    allItems = await r.json();
+    applyFilter();
+  } catch(e) { document.getElementById('words').textContent = 'データの読み込みに失敗しました'; }
+}
+function applyFilter() {
+  if (currentFilter === 'all') filteredItems = [...allItems];
+  else if (currentFilter === 'unvoted') filteredItems = allItems.filter(i => !votes[currentUser][i.id]);
+  else filteredItems = allItems.filter(i => i.day === currentFilter);
+  currentIndex = 0;
+  render();
+}
+function render() {
+  if (filteredItems.length === 0) {
+    document.getElementById('card').style.display = 'none';
+    document.getElementById('completeScreen').classList.add('visible');
+    document.getElementById('voteButtons').style.display = 'none';
+    updateFinalStats();
+    return;
+  }
+  document.getElementById('card').style.display = 'flex';
+  document.getElementById('completeScreen').classList.remove('visible');
+  document.getElementById('voteButtons').style.display = 'flex';
+  if (currentIndex >= filteredItems.length) currentIndex = filteredItems.length - 1;
+  const item = filteredItems[currentIndex];
+  document.getElementById('dayBadge').textContent = item.day;
+  document.getElementById('themeTag').textContent = item.theme;
+  document.getElementById('words').textContent = item.words;
+  const sb = document.getElementById('sourceBadge');
+  if (item.source === 'C') { sb.textContent = 'CLAUDE'; sb.className = 'source-badge source-c'; }
+  else { sb.textContent = 'OPENCLAW'; sb.className = 'source-badge source-o'; }
+  const dt = document.getElementById('descToggle');
+  const desc = document.getElementById('description');
+  if (item.description) { dt.style.display = 'block'; dt.textContent = '解説を見る ▾'; desc.classList.remove('visible'); desc.textContent = item.description; }
+  else { dt.style.display = 'none'; desc.classList.remove('visible'); }
+  const uv = votes[currentUser][item.id];
+  document.querySelectorAll('.vote-btn').forEach(b => { b.style.opacity = uv ? '0.6' : '1'; b.style.outline = 'none'; });
+  if (uv === 'good') { document.getElementById('btnGood').style.opacity = '1'; document.getElementById('btnGood').style.outline = '3px solid var(--green-deep)'; }
+  else if (uv === 'bad') { document.getElementById('btnBad').style.opacity = '1'; document.getElementById('btnBad').style.outline = '3px solid var(--red-deep)'; }
+  else if (uv === 'skip') { document.getElementById('btnSkip').style.opacity = '1'; document.getElementById('btnSkip').style.outline = '3px solid var(--gray)'; }
+  updateProgress();
+  document.getElementById('btnPrev').disabled = currentIndex === 0;
+}
+function updateProgress() {
+  const uv = votes[currentUser];
+  const g = Object.values(uv).filter(v => v === 'good').length;
+  const s = Object.values(uv).filter(v => v === 'skip').length;
+  const b = Object.values(uv).filter(v => v === 'bad').length;
+  document.getElementById('progressText').textContent = `${currentIndex + 1} / ${filteredItems.length}`;
+  document.getElementById('countGood').textContent = `採用 ${g}`;
+  document.getElementById('countSkip').textContent = `保留 ${s}`;
+  document.getElementById('countBad').textContent = `却下 ${b}`;
+  const p = allItems.length > 0 ? ((g+s+b) / allItems.length) * 100 : 0;
+  document.getElementById('progressFill').style.width = `${p}%`;
+}
+function updateFinalStats() {
+  const uv = votes[currentUser];
+  document.getElementById('finalGood').textContent = Object.values(uv).filter(v => v === 'good').length;
+  document.getElementById('finalSkip').textContent = Object.values(uv).filter(v => v === 'skip').length;
+  document.getElementById('finalBad').textContent = Object.values(uv).filter(v => v === 'bad').length;
+}
+function vote(d) {
+  const item = filteredItems[currentIndex];
+  votes[currentUser][item.id] = d;
+  saveVotes();
+  if (navigator.vibrate) navigator.vibrate(15);
+  setTimeout(() => nextItem(), 200);
+}
+function nextItem() {
+  if (currentIndex < filteredItems.length - 1) { currentIndex++; render(); }
+  else { if (currentFilter === 'unvoted') applyFilter(); else render(); }
+}
+function prevItem() { if (currentIndex > 0) { currentIndex--; render(); } }
+function exportResult() {
+  const un = { hide: 'ヒデ', mori: '森', kashizako: '樫迫' }[currentUser];
+  const uv = votes[currentUser];
+  const gi = allItems.filter(i => uv[i.id] === 'good');
+  const si = allItems.filter(i => uv[i.id] === 'skip');
+  const bi = allItems.filter(i => uv[i.id] === 'bad');
+  let out = `=== ATS言葉の選別結果 ===\n投票者: ${un}\n日時: ${new Date().toLocaleString('ja-JP')}\n\n【集計】 採用:${gi.length} 保留:${si.length} 却下:${bi.length}\n\n=== 採用 (${gi.length}件) ===\n`;
+  gi.forEach(i => { out += `[${i.id}] ${i.day}・${i.theme} (${i.source})\n${i.words}\n---\n`; });
+  out += `\n=== 却下 (${bi.length}件) ===\n`;
+  bi.forEach(i => { out += `[${i.id}] ${i.day}・${i.theme} (${i.source}): ${i.words.substring(0, 30)}...\n`; });
+  navigator.clipboard.writeText(out).then(() => alert(`結果をコピーしました!\n採用: ${gi.length}件 保留: ${si.length}件 却下: ${bi.length}件`)).catch(() => prompt('下記をコピーしてください:', out));
+}
+function resetVotes() {
+  const un = { hide: 'ヒデ', mori: '森', kashizako: '樫迫' }[currentUser];
+  if (!confirm(`${un}さんの投票を全てリセットしますか？`)) return;
+  votes[currentUser] = {}; saveVotes(); applyFilter();
+}
+document.querySelectorAll('.user-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.user-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); currentUser = b.dataset.user; applyFilter();
+}));
+document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); currentFilter = b.dataset.filter; applyFilter();
+}));
+document.getElementById('btnGood').addEventListener('click', () => vote('good'));
+document.getElementById('btnSkip').addEventListener('click', () => vote('skip'));
+document.getElementById('btnBad').addEventListener('click', () => vote('bad'));
+document.getElementById('btnPrev').addEventListener('click', prevItem);
+document.getElementById('btnNext').addEventListener('click', nextItem);
+document.getElementById('exportBtn').addEventListener('click', exportResult);
+document.getElementById('resetBtn').addEventListener('click', resetVotes);
+document.getElementById('descToggle').addEventListener('click', () => {
+  const d = document.getElementById('description'), t = document.getElementById('descToggle');
+  if (d.classList.contains('visible')) { d.classList.remove('visible'); t.textContent = '解説を見る ▾'; }
+  else { d.classList.add('visible'); t.textContent = '解説を閉じる ▴'; }
+});
+loadVotes(); loadData();
+</script>
+</body>
+</html>
